@@ -56,6 +56,9 @@ But once you understand the transformer, you can just as easily apply it to any 
 
 We will be implementing the pioneering research paper [_'Attention Is All You Need'_](https://arxiv.org/abs/1706.03762), which introduced the Transformer network to the world. A watershed moment for cutting-edge Natural Language Processing.
 
+`
+implementing 实施
+`
 >Wir werden das wegweisende Forschungspapier [_"Attention Is All You Need"_](https://arxiv.org/abs/1706.03762) umsetzen, das das Transformer-Netzwerk in die Welt eingeführt hat. Ein Wendepunkt für die hochmoderne Natural Language Processing.
 
 Specifically, we are going to be translating from **English** to **German**. And yes, everything written here in German is straight from the horse's mouth! (The horse, of course, being the model.)
@@ -67,22 +70,36 @@ Specifically, we are going to be translating from **English** to **German**. And
 * **Machine Translation**. duh.
 
 * **Transformer Network**. We have all but retired recurrent neural networks (RNNs) in favour of transformers, a new type of sequence model that possesses an unparalleled ability for representation and abstraction – all while being simpler, more efficient, and significantly more parallelizable. Today, the application of transformers is near universal, as their resounding success in NLP has also led to increasing adoption in computer vision tasks.
+
+* Transformer 已经替代了 RNN, 有无与伦比的表示和抽象能力， 同时更简单、更高校、可并行性更强
   
 * **Multi-Head Scaled Dot-Product Attention**. At the heart of the transformer is the attention mechanism, specifically this flavour of attention. It allows the transformer to interpret and encode a sequence in a multitude of contexts and with an unprecedented level of nuance.
 
+- Transformer 核心为注意力机制。它使 Transformer 能在多种情况下 以 细微差别 解释和编码一个序列
+
 * **Encoder-Decoder Architecture**. Similar to RNNs, transformer models for sequence transduction typically consist of an encoder that encodes an input sequence, and a decoder that decodes it, token by token, into the output sequence.
+
+- 由 编码器 和 解码器 组成，前者对输入序列编码，后者将输入序列逐个解码为输出序列
 
 * **Positional Embeddings**. Unlike RNNs, transformers do not innately account for the sequential nature of text – they instead view such a sequence as a bag of tokens, or pieces of text, that can be freely mixed and matched with tokens from the same or different bag. The coordinates of tokens in a sequence are therefore manually injected into the transformer as one-dimensional vectors or *embeddings*, allowing the transformer to incorporate their relative positions into its calculations.
   
+- 与 RNN 不同，Transformer 不考虑顺序，将顺序视为 一袋标记或片段，与其他袋子自由混合匹配。因此，序列中标记的坐标以 embedding (一维向量) 形式嵌入。
+
 * **Byte Pair Encoding**. Language models are both enabled and constrained by their vocabularies. Machine translation, especially, is an *open*-vocabulary problem. Byte Pair Encoding is a way to construct a vocabulary of moderate size that is still able to represent nearly any word, whether it is known, seldom known, or unknown.
 
+- 对于语言模型，字节对编码几乎可以表示任意单词
+
 * **Beam Search**. As an alternative to simply choosing the highest-scoring token at each step of the generative process, we consider multiple candidates, reserving judgement until we see what they give rise to in subsequent steps – before finally picking the best *overall* output sequence.
+
+- 同时考虑多个轨迹，选择后续步骤的最佳`总`输出序列
 
 # Overview
 
 In this section, I will present an overview of the transformer. If you're already familiar with it, you can skip straight to the [Implementation](https://github.com/sgrvinod/a-PyTorch-Tutorial-to-Transformers#implementation) section or the commented code.
 
 Transformers have completely changed the deep learning landscape. They've replaced recurrent neural networks (RNNs) as the workhorse of modern NLP. They have caused a seismic shift in our sequence modeling capabilities, not only with their amazing representational ability, but also with their capacity for transfer learning after self-supervised pre-training on large amounts of data. You have no doubt heard of these models in one form or another – BERT, GPT, etc. 
+
+- transformer 有惊人的表征能力，有迁移学习能力
 
 Today, they are also increasingly being used in computer vision applications as an alternative to, or in combination with, convolutional neural networks (CNNs).
 
@@ -92,11 +109,15 @@ As in the original transformer paper, the context presented here is an NLP task 
 
 Recurrent neural networks (RNNs) have long been a staple among NLP practitioners. They operate upon a sequence – you guessed it – *sequentially*. This isn't weird at all; it's even intuitive because that's how *we* do it too – we read text from one side to another. 
 
+- 长久以来使用 RNN 是由于其序列性，这与阅读文本行为相同
+
 <p align="center">
 <img src="./img/rnn_sequential.PNG">
 </p>
 
 On the other hand, our ability to train deep neural networks is somewhat predicated on our ability to perform efficient computation. **The sequential nature of RNNs precludes parallelization** – you cannot move to the next token in the sequence without processing the previous one. Training networks on large amounts of data can be significantly time consuming.
+
+- RNN 的特性排除了并行化，不能高校计算
 
 **Transformers can process elements in a sequence *in parallel*.**
 
@@ -106,9 +127,15 @@ On the other hand, our ability to train deep neural networks is somewhat predica
 
 The sequential processing of text in an RNN introduces another problem. The output of the RNN at a given position is conditioned directly on the output at the previous position, which in turn is conditioned on *its* previous position, and so on. However, **logical dependencies in text can occur across longer distances**. It is often the case that you need access to information from a dozen positions ago. 
 
+- RNN 在给定位置的输出取决于前一个位置，但真实文本的依赖关系可跨越更长距离
+
 No doubt some of this information can persist across moderate distances, but a lot of it **could have decayed in the daisy-chain of computation that defines the RNN**. It's easy to see why – we're relying on the output at each position to encode not only the output at *that* position but also _other_ information that may (or may not) be useful ten steps down the line, with the outputs of each intervening step also having to encode their own information *and* pass on this possibly relevant information. 
 
 There have been various modifications to the original RNN cell over the years to allievate this problem, the most notable of which is probably the Long Short-Term Memory (LSTM) cell, which introduces an additional pathway known as the "cell state" for the sequential flow of information across cells, thereby reducing the burden on the cell outputs to encode all of this information. While this allows for modeling longer dependencies, the fundamental problem still exists – **an RNN can access other positions only through intervening positions** and not directly. 
+
+- LSTM 为了解决单节点编码过多问题，为单元间信息的顺序流动引入“单元状态”额外途径，减轻负担。
+
+- 但还是只能通过介入间接访问其他位置
 
 **Transformers allow direct access to other positions.**
 
@@ -118,13 +145,24 @@ There have been various modifications to the original RNN cell over the years to
 
 This means that each position can use information directly from other positions in a sequence, producing a highly context-aware and nuanced output. This, along with other design choices we will see later, makes way for **transformers' unprecedented representational ability**.
 
+- 直接对上下文的访问，造成了 transformer 强大的表征能力 
+
 The "direct access" we are speaking of occurs through an **attention mechanism**, something not completely unlike attention mechanisms you may have encountered earlier – for example, between an RNN encoder and decoder. If the concept is completely unfamiliar to you, it doesn't matter as we will go over it in quite some detail very soon.
+
+- 直接访问是由 "注意力机制" 实现的
 
 I would like to point out here that RNNs need not be unidirectional. Since important textual context can occur both before and after a certain position in the sequence, we often use *bidrectional* RNNs, where we operate two different RNN cells in opposite directions and combine their outputs. On the other hand, **a transformer layer is inherently bidirectional** – unless we choose to constrain access to a particular direction, as we will see later.
 
+- 普通RNN为单方向，但也可以为双方向（相反反向操作两个不同 RNN 单元，并将合并输出），Transformer 本来为双向
+
 Also note that in RNNs, information about the positions of individual elements in the sequence are inherently encoded into the RNN by the fact that we process them in a specific order. If in a transformer, they are being processed all at once, **we need another way of introducing this positional information**. We will explore this later on.
 
+- RNN 中序列的位置信息被编码，在 transformer 中同时处理所有消息，需要另外一种 位置编码
+
 Another thing to keep in mind is that, **during inference, the part of a trained transformer network that deals with the *generation* of a new sequence still operates autoregressively**, like in an RNN, where each element of the sequence is produced from previously generated elements. During training, *everything* is parallelized. Encoding a known sequence, such as the input sequence, is *always* parallelized.
+
+- 推理过程中，Transformer 依然是自回归的，序列元素由前一个元素生成
+- 训练过程中，对输入序列的编码，是并行化运算的
 
 ### Wait. A sequence of what?
 
@@ -134,7 +172,11 @@ In fact, over the years, we've tried just about everything – characters, words
 
 **Subwords** can be characters, words, or anything in between. They are a nice trade-off between a compact character vocabulary with units that aren't meaningful by themselves that produce extremely long sequences, and a monstrously large vocabulary of full words that would still be completely tripped up by a new word. Subwords allow for encoding almost any word, even unseen words, with a relatively compressed vocabulary size.
 
+- *subword* 可以编码任意单词，甚至是没见过的单词，且词汇量较小
+
 To create an optimal vocabulary of subwords, we will be using a technique called **Byte Pair Encoding**, a form of subword tokenization. We will study how this works [later](https://github.com/sgrvinod/a-PyTorch-Tutorial-to-Transformers#byte-pair-encoding). For now, I only wanted to give you a heads up in case you're wondering why the sequences in our examples are not always split into full words. 
+
+- Byte Pair Encoding
 
 As an example, let's consider the following –
 
@@ -152,6 +194,8 @@ The model does a fairly good job, as far as I can tell. It opts for the noun *Ge
 
 The English quote above is tokenized as follows –
 
+> The most beautiful thing we can experience is the mysterious. It is the fundamental emotion which stands at the cradle of true art and true science.
+
 ```python
 ["_The", "_most", "_beautiful", "_thing", "_we", "_can", "_experience", "_is", "_the", "_myster", "ious", ".", "_It", "_is", "_the", "_fundamental", "_emotion", "_which", "_stands", "_at", "_the", "_c", "rad", "le", "_of", "_true", "_art", "_and", "_true", "_science", "."]
 ```
@@ -166,6 +210,8 @@ The German translation by the model is tokenized as –
 
 You can see in the tokenization that common words are retained as full words, but others are split into multiple parts. The "_" (underscore) character signifies the beginning of a word in the original sentence.
 
+- 常规单词被整个训练， 未见单词被分为多个部分
+
 From this point on, I will simply refer to the units in a sequence as ***tokens***.
 
 ### A familiar form
@@ -174,15 +220,21 @@ While a transformer is quite different in its inner working compared to an RNN, 
 
 The goal of the encoder is to ***encode* the input sequence** into a deep, "learned" representation. Like in an RNN, this involves encoding each token in the sequence.
 
+-  encoder 将输入序列 编码为 highly learned representation
+
 <p align="center">
 <img src="./img/encoder.PNG">
 </p>
 
 The goal of the decoder is to use this encoded representation of the input sequence to **produce the output sequence.** Like in an RNN, during training, we use something called ***teacher forcing*** – we use every word from the true output sequence to learn to generate the next true word in the sequence. But while an RNN still processes the input sequence and generates sequentially, a transformer does it in parallel.
 
+- decoder 使用输入序列的编码产生输出序列，使用 ** teacher forcing **, 如图中黄色部分，使用真值来学习下一个输出。这个过程同样为并行。
+
 <p align="center">
 <img src="./img/decoder_training.PNG">
 </p>
+
+- 实施过程中， decoder 是自回归的
 
 During inference, the decoder operates autoregressively, which means that it generates one word at a time, each of which is used to generate the next word. 
 
@@ -206,6 +258,8 @@ And then, another.
 
 You get the drift. The generative process is terminated upon the generation of an `<EOS>` token which signifies "end of sequence – I'm done".
 
+- 依据不同任务 可能仅需要 解码器，编码器或两者
+
 Depending on the task at hand, **you need either only the encoder, only the decoder, or both** –
 
 - A sequence classification or labeling task requires only the encoder. Popular transformer models like **BERT** are encoder-only. 
@@ -214,10 +268,13 @@ Depending on the task at hand, **you need either only the encoder, only the deco
 
 - Sequence generation can also be accomplished by a decoder-only model, where the input sequence or prompt can be used as the first bunch of tokens in an autoregressive decoder. The popular **GPT** family of transformer models are decoder-only.
 
+- GPT 是一种仅有 decoder 的 transformer
+
 In fact, after this tutorial, it will be easy for you to read and understand the research papers for these and other popular transformer models because they adopt, for the most part, the same transformer architecture with some modifications.
 
 Now, without further delay, let's dive into what makes a transformer... a transformer.
 
+### transformer 的概念
 ### Queries, Keys, and Values
 
 Consider a *search* problem. 
@@ -228,11 +285,15 @@ Consider a *search* problem.
 
 The goal is, given a ***query***, to find a ***value*** that is most closely matched to it. This will be accomplished by comparing the query to a ***key*** associated with each candidate value. 
 
+- 目标是找到与 query 最匹配的 value
+
 <p align="center">
 <img src="./img/queries_keys_values_2.PNG">
 </p>
 
 But in real life, there is rarely a single relevant match – relevancy is a spectrum! 
+
+- 但是相关性通常是一个 范围
 
 <p align="center">
 <img src="./img/queries_keys_values_3.PNG">
@@ -246,17 +307,29 @@ Would it then make sense to return a weighted average of the values instead as t
 
 Yes, it would absolutely make sense, especially if the values are vectors or *embeddings*, where the different dimensions numerically encode various (and often abstract) properties!
 
+- 当values是向量或者 *embeddings* 时，查询结果的加权组合是很有意义的
+
 **This process, in a nutshell, is the *attention* mechanism.**  The query is *attending* to the values via their keys. In other words, they query pays varying (but appropriate) degrees of *attention* to the different values, producing an aggregate, nuanced result that best represents that query in the context of these values. 
+
+- 这个过程就是注意力机制，*queries* 对不同的 value 给与不同程度的 *attention*, 产生综合、细致入微的结果
 
 The terms *queries*, *keys*, and *values* were unfamiliar to me when I first read this paper. I suppose they're borrowed from database terminology. While not complex, they may be new to you as well and may take some time getting used to. At this point, remember only this – with an attention mechanism, **you can represent any token in your sequence, i.e. *query*, as some appropriately weighted sum of representations of all tokens, i.e. *values*, in the same or entirely different sequence**. 
 
+- 可以将序列中的任何 token 即为 *query* 表示为相同或 完全不同序列中所有标记 即 *value* 的某种加权之和
+
 Attention mechanisms are used commonly with RNNs, especially between an RNN encoder and decoder. [In one of my earlier tutorials](https://github.com/sgrvinod/a-PyTorch-Tutorial-to-Image-Captioning#attention), we used an attention mechanism in conjunction with an RNN decoder, where at each decoding step (query), we paid more attention to parts of the image (values) that are relevant at that decoding step and less attention to parts (values) that aren't relevant. 
 
+- attention 机制通常应用于 RNN encoder 和 decoder 之间
+
 In transformers, however, attention mechanisms not only abound – they are the driving force. Transformers are chockablock with attention mechanisms. I repeat, they're stuffed to the gills with attention mechanisms. Because, as the title of the paper declares, **attention is all you need!** 
+
+- transformer 被注意力机制塞得满满的
 
 Okay, now that I've hyped it up, you might be wondering exactly how the attention mechanism works. How is a query matched to the keys that represent the values? There are several different ways this can be accomplished. 
 
 In the transformer, we use ***multi-head scaled dot-product attention***. Let's unpack this [ominous-sounding name](https://www.google.com/search?tbm=isch&q=multi+head+scaled+monster), shall we?
+
+- 多头怪物
 
 ### *Dot-Product* Attention
 
@@ -268,17 +341,27 @@ Consider two sequences.
 
 I have not used the English and German sequences from earlier as examples here, because the query sequence and key-value sequence can be *either*, as you will see later. For now, consider any general sequence $a$ or $b$.
 
+- * query * 序列和 key-value 序列可以是任意的，考虑两个广义序列 a and b
+
 The *query sequence* is composed of tokens that are to be queried against the tokens in the *key-value sequence*. That is, each token in the query sequence *attends* to each token in the *key-value sequence*. The goal, then, is to ultimately **represent each token in the query sequence in the form of a weighted sum of representations of the tokens in the key-value sequence**. 
+
+- * query * 的每个序列都 *attneds* key-value 序列的每个 token
+
+- 最终目标： 以 key-value 中 token 的加权和 表示 query 序列中的每个 token
 
 Now, each token in the query sequence is to be queried, but is it already *a* query? Not yet. For example, the token could be represented as an embedding from a dictionary of token-embeddings. This may not be the optimal space for querying.
 
 To generate the queries, **we project current token representations with a simple linear layer into a query-space.** This projection is part of the model and is learned.  
+
+- 为将 query sequence 转化为最终的 queries , 使用一个简单的 线形层将当前 token 投影至 query-space
 
 <p align="center">
 <img src="./img/creating_queries.PNG">
 </p>
 
 Similarly, tokens in the key-value sequence represent keys and values, but are not yet *the* keys and values. **We project these token-representations into keys and values with linear layers.**
+
+- key-value sequenche 也通过线形层投影成为 keys and values
 
 <p align="center">
 <img src="./img/creating_keys.PNG">
@@ -290,9 +373,14 @@ Similarly, tokens in the key-value sequence represent keys and values, but are n
 
 Naturally, these projections are learned during training. For the keys, the tokens should be projected into a space suitable for comparision with the queries. For the values, the tokens should be projected into a space that suitably represents the essence of these tokens because they will be used in a weighted average to represent each query.
 
+- 对于 key , tokens 应被投影至适合于 queries 比较的空间
+- 对于 values, 应被投影至适合表示 values 本质的空间，因为他们将被加权表示查询
+
 After the queries, keys, and values (each a one-dimensional vector) are created, we move on to **quantifying the *match* between the queries and the keys**. 
 
 As you may have surmised already, **this can be done with a dot-product**.
+
+- dot-product 衡量相似度
 
 <p align="center">
 <img src="./img/dot_product.PNG">
@@ -300,13 +388,18 @@ As you may have surmised already, **this can be done with a dot-product**.
 
 **Hence the name – *dot-product attention*.** There are other ways to do it too. For example, you could concatenate queries and keys (or representations thereof) and feed them through one or more linear layers that ultimately produce a scalar (single-valued) similarity score. This is known as *additive attention*, originally from [this paper](https://arxiv.org/abs/1409.0473) which – as far as I'm aware – was the first application of attention in a modern neural network. 
 
+- 可以将 query 和 keys 串联起来，通过一或多个线形层，最终残生标量相似度分数，即 additive attention
+
 The **dot-products are then passed through a softmax layer** to convert them to percentages.
 
+- softmax 层 dot-product 输出转化为 百分数
 <p align="center">
 <img src="./img/softmax.PNG">
 </p>
 
 We can now precisely describe how the attention of each token in the query sequence is divided between the tokens in the key-value sequence. That is, we are able to say something along the lines of "*token X in the query sequence attends 50% to token A, 10% to token B, and 40% to token C in the key-value sequence*".
+
+- 注意力机制即为各个 values 所占的百分比
 
 The result for each query can thus be calculated as a **weighted average of the values in these same proportions.**
 
@@ -316,11 +409,21 @@ The result for each query can thus be calculated as a **weighted average of the 
 
 And voilà – through the attention mechanism, **we have now *reimagined* and *reinterpreted* each token in the query sequence in the appropriate context of the key-value sequence**. 
 
+- 我们在上下文 key-value 序列中 * 重新想象 * 和 * 增强了 * query 序列中的每个 token
+
 The easiest way to understand the value in doing this is to consider what we call ***self-attention***, where the query and key-value sequence are the same! This means that the tokens in a sequence attend to all the tokens *in the same sequence*. For example, in machine translation from English to German, each English token is originally represented by itself – an embedding that represents that token alone, with no situational awareness. Through the attention mechanism, we are able to *reimagine* and *reinterpret* each English token in the context of the entire English sentence! The token will now be represented in a richer, more *nuanced* form that provides a better understanding of the token for the purposes of translation.
+
+- self-attention: query 和 key-value 序列是相同的
+- 通过 attention 机制，我们能够 在整个上下文序列中 *reimagine* 和 *reinterpret* 每个 token
+- 现在 token 更加丰富、细微 
 
 On the other hand, you could also consider ***cross-attention***, where the query and key-value sequence are two different sequences – for instance, the German and English sequences, respectively. As we translate to German, we can query translated German tokens with respect to highly nuanced representations of the English sequence (produced by self-attention), enriching them with the knowledge required to further the translation. In fact, as you will see, we will do exactly this.
 
+- 另一方面，考虑*cross-attention*， 由 *self-attention*产生的序列 查询 已翻译德语标记
+
 Finally, you could reproject the result from the attention mechanism into some other, more optimal space with your desired dimensionality. 
+
+- 最终可以将注意力机制的结果重新投影到其他更理想的空间中
 
 <p align="center">
 <img src="./img/creating_outputs.PNG">
@@ -328,6 +431,8 @@ Finally, you could reproject the result from the attention mechanism into some o
 
 It's easy to see that the attention mechanism operates upon tokens ***in parallel***, unlike whatever happens in an RNN, because the attention of a particular token in the query sequence *does not* depend upon the attention of any other token in that sequence – they are independent of each other!
 
+- query 查询时，其每个 token 间的注意力是独立的 ！ 可并行计算
+ 
 ### *Scaled* Dot-Product Attention
 
 The dot-product of two vectors is *unnormalized*. If the two vectors – queries and keys – are very highly dimensional, **the magnitude of the dot-product could potentially be quite large**, since we're summing as many terms as there are dimensions to compute the dot-product. 
