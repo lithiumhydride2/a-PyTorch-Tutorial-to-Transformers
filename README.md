@@ -485,11 +485,16 @@ Finally, we produce a single representation for each query by concatenating the 
 
 This is all quite wonderful – **but wouldn't it get terribly expensive to perform all this computation?** Yes – but no! 
 
+- 应该是在这里合并冲突
+
+
 If in single-head attention, we were using queries, keys, and values of dimensions $d_{queries}$, $d_{keys}$ ($=d_{queries}$), and $d_{values}$ respectively, we can maintain the same FLOPs in multi-head attention by using $h$ sets of queries, keys, and values of dimensions $\frac{d_{queries}}{h}$, $\frac{d_{keys}}{h}$, and $\frac{d_{values}}{h}$ respectively. **Using multiple heads with reduced dimensionality is still considerably better than using a single head.** 
 
 <p align="center">                                                                       
 <img src="./img/multi_head.PNG">
 </p>
+
+-当你使用 multi-head transformer 时，可以通过将维度减少至原来 1/h 来保持同样运算量
 
 Since the heads are completely independent of each other, **they are easily parallelized.**
 
@@ -497,9 +502,11 @@ And there we have it – multi-head... scaled... dot-product... attention.
 
 Don't worry if the concepts we've discussed so far seem hazy to you – it was for me too – because they *will* solidify in your mind soon. If anything, I find the attention mechanism in the transformer to be much more intuitive than the complex machinations of the LSTM cell. *Begone*, RNN!
 
-### Dimensionality – a review
+### Dimensionality – a review 回顾维度
 
 I'm aware that in the figures above, I've introduced a bajillion vectors with those pesky coloured rectangles. **What are their dimensionality?**
+
+- 上面图片中矩形的维度是什么
 
 For convenience, the query and key-value sequences will have the same number of dimensions $d_{model}$. They need *not* be of the same size, but it's convenient.
 
@@ -507,11 +514,15 @@ For convenience, the query and key-value sequences will have the same number of 
 <img src="./img/query_key_value_sequences_dims.PNG">
 </p>
 
+- query sequence 和 key-value sequence 具有相同的维度，但无需 size 相同
+
 Queries and keys *must* be of the same dimensionality $d_{queries}$ because we will need to compute their dot-products.
 
 <p align="center">                                                                       
 <img src="./img/queries_keys_dims.PNG">
 </p>
+
+- quert 和 keys 间必须有相同维度
 
 Values can be of any desired number of dimensions $d_{values}$. 
 
@@ -527,6 +538,8 @@ Naturally, the results for each query from the attention mechanism will also be 
 
 The final output can be of any dimensionality. But for convenience, and for enabling residual connections across the attention mechanism, we will use the same number of dimensions as in the input sequences $d_{model}$.
 
+- 输出可以是任何维度，为了方便建立残差联系，使用与输入序列相同的维度
+
 <p align="center">                                                       
 <img src="./img/outputs_dims.PNG">
 </p>
@@ -537,15 +550,25 @@ In fact, as the name suggests, we will use $d_{model}$ dimensionality for inputs
 
 The entire multi-head scaled dot-product attention mechanism can be **encapsulated and represented in the form of a neural network layer**, whose learnable parameters are the parameters of the linear layers that produce the queries, keys, values, and the final outputs from the attention-weighted results.
 
+- multi-head scaled dot-product attention 可以以神经网络层的形式封装表示，可学习参数为 产生 query,key,value,results 的线性层的参数
+
 To reiterate, in ***self*-attention**, the tokens in a sequence attend to all the tokens *in the same sequence*. Tokens that are originally represented by embeddings that represent that token alone, with no situational awareness, can be transformed into representations that provides nuanced interpretations of these tokens in the context of the sequence they are a part of. Stacking such self-attention layers builds upon these contexts, progressively reinterpreting and reimagining their meaning in the light of previous learnings. This is something that would benefit *both* sequences in a sequence-to-sequence setting – the English and German sequences, in this tutorial.
 
+- 重申，在self-attention 中，序列中标记关注同一序列的所有标记。最初由 embedding 表示的标记，转化为在序列上下文中细致入微的解释。 并根据先前学习，逐步重新解释和想象其含义。
+
 In the rest of the tutorial, we will denote a self-attention layer with a single colour, indicating that the query and key-value sequences are the same.
+
+- 使用一种颜色表示 self-attention ,query 和 key-value 为用以 sequence。
+
+
+
 
 <p align="center">                                                       
 <img src="./img/self_attention.PNG">
 </p>
 
-In ***cross*-attention**, we interpret a sequence in the light of a different sequence. As we saw [earlier](https://github.com/sgrvinod/a-PyTorch-Tutorial-to-Transformers#a-familiar-form), generation of a new sequence during inference is piecemeal – tokens are generated one at a time. At each step, for example, a partially generated German sequence must be enriched with information from the English sequence, itself richly encoded through self-attention, required to further the translation. 
+
+- 在 cross-attention 中，使用不同序列来解释一个序列。推理过程中新序列产生是零碎的-tokens 一个一个生成。（训练过程仍然是并行的）
 
 In the rest of the tutorial, we can denote a cross-attention layer with two different colours, indicating that the query and key-value sequences are *not* the same.
 
@@ -558,7 +581,7 @@ The inputs to and outputs of an attention layer are of size $d_{model}$.
 ### Feed-Forward Layer
 
 Another component of a transformer network is a **two-layer feed-forward network with an intervening ReLU activation** that operates *position-wise*. This means that it operates on each token representation (i.e. position) independently and in the same way.
-
+- 按位置的 双侧前馈网络， 对每个 token 按位置进行独立操作。
 <p align="center">                            
 <img src="./img/feed_forward.PNG">
 </p>
@@ -569,6 +592,8 @@ Like in the attention mechanism, the inputs to and outputs of this layer are als
 
 Now that we have detailed the attention and feed-forward network layers, we can combine them in the specific configuration shown below to create the transformer encoder.
 
+- 通过 attention 和 双层前馈网络，组成 transofrmer 的 encoder
+
 <p align="center">                            
 <img src="./img/transformer_encoder.PNG">
 </p>
@@ -577,7 +602,10 @@ Notably –
 
 - Tokens from the input (English) sequence is first embedded using a look-up embedding table. **Token embeddings** are learned during training. As you may know, this is pretty standard practice.
 
-- We then add to each token embedding a ***positional* embedding**, which is a vector that signifies the position of the token in the sequence. As a transformer operates upon all tokens *together*, and not *sequentially* like in an RNN, we would need to explicitly indicate the positions of tokens. Positional embeddings are also stored in a look-up table. They can be learned, much like token embeddings, but the authors of the paper use a different strategy which we will examine very soon. 
+- 首先使用 look-up embedding 表对输入 英语 序列进行 embedding, 这在训练过程中学习。
+
+
+- 为每个 token embedding 添加一个 位置嵌入， 这是一个表示标记在序列中位置的向量。 由于并行计算，需要指出 tokens 的位置。 位置嵌入也是可以学习的。 
 
 - The transformer encoder consists of **$6$ encoder layers**. 
   
@@ -585,13 +613,18 @@ Notably –
   
 - In the self-attention sublayer, the tokens in the English sequence attend to themselves, producing rich, contextual token representations. As many as **$8$ attention heads** are used in each self-attention sublayer. The feed-forward sublayer provides additional refinement to representations from the attention sublayer. Note that attention or feedforward sublayers in different encoder layers are independent of each other – they *do not* share parameters.
 
+- 每个 self-attention 层中，有 8 个注意力头， 子层间的 前馈子层 是独立的，不共享参数。
+
 - Each sublayer is preceded by **layer normalization**, which stabilizes the network and accelerates training. 
   
 - **Residual connections** are applied across the each *layer-norm + sublayer* combination. Hence, and as discussed earlier, inputs and outputs to the sublayers must be of the same dimensionality $d_{model}$, which is also maintained across all encoder layers for convenience.
 
+- 残差连接适用于每个 layers 中的 前馈网络 和 self-attention 。 且，每个 sub-layer 都有相同的输入输出维度。 
+
 As you can imagine, as the English sequence propagates through the encoder layers, it is progressively transformed into richer and more context-aware representation, each subsequent self-attention layer with its many heads mixing and matching numerous contexts diligently – and contexts *upon* contexts *upon* contexts. 
 
-Ultimately, it emerges as a *highly* nuanced encoding that serves as a great representation of the input sequence that can be fully understood and assessed for the purposes of translation by the decoder. 
+
+- self-attention * 6 产生高度细微差别的编码，包含丰富的语义信息。
 
 ### Transformer Decoder
 
@@ -605,21 +638,29 @@ Notably –
 
 - Tokens from the input (German) sequence are also first embedded using a learnable look-up embedding table – in fact, the *same* look-up table used in the encoder. The vocabulary is shared between English and German, and so are the **token embeddings**. Embeddings for tokens that are used in both English and German sequences will learn from *both* languages, which makes sense because languages can have similar roots.
 
+- 输入 德语 也首先使用查找表进行嵌入。encoder 与 decoder 使用同一个查找表，同时在英语和德语上学习。
+
 - **Positional embeddings** are added. The same positional embedding look-up table is shared between the encoder and decoder.
 
 - The transformer decoder consists of **$6$ decoder layers**. 
   
 - Each decoder layer consists of a ***self*-attention sublayer**, a ***cross*-attention sublayer**, and a  position-wise **feed-forward sublayer**. 
 
+- 每一个子层包含一个 self-attention , 一个来自英语的 cross-attention , 一个来自 position-wise 前馈网络
+
 - While the self-attention sublayer allows the input (German) sequence to attend to its own contexts, the cross-attention sublayer allows for attending to contexts in the encoded English sequence from the encoder, which is what must be translated! Both sublayers use **$8$ attention heads**.
   
 - The outputs of the final decoder layer are linearly projected to the size of the vocabulary $v$ using a linear layer that functions as a **classification head** and the *Softmax* operation is applied to generate probability scores for next-word predictions.
+
+- 最后解码器层的输出被线性地投射到词汇量大小 v 中，这被称为 分类头，之后用 soft-max 产生下一个词汇预测的分数
 
 - This classification head has learnable parameters of size $v \times d_{model}$. The shared English-German learnable embedding look-up table *also* has parameters of size $v \times d_{model}$. The parameters of the embedding table are *tied* to the parameters of the classification head. In other words, these parameters are shared. 
 
 As the German sequence propagates through the decoder layers, representations at each German token position are enriched with the know-how required, both from the German tokens available thus far and the full, encoded English sequence, to generate the next token in the German sequence.
 
 While [sharing weights](https://arxiv.org/abs/1611.01462v3) between the embedding layers and the classification head is intuitive because the latter *is* learning token embeddings of a sort, it results in a drastic reduction in the number of parameters in the transformer model. Remember, $v$ is usually a very large number!  Consequently, these parameters receive gradient information during back-propagation at *three* points in the network – at the classification head, at the beginning of the decoder where German token embeddings are looked up, and at the beginning of the encoder where English token embeddings are looked up. 
+
+- 分类头，英语位置编码，德语位置编码共享参数，由于 v 是个很大的参数
 
 ### Putting it all together
 
@@ -649,11 +690,14 @@ The authors of the paper use the following values in the transformer's construct
 
 ### Can *anything* attend to *anything*?
 
-Can all tokens in the query sequence *always* attend to all tokens in key-value sequence? No, not always. 
+
+- 查询序列的所有 token 总能和 key-value 序列的键值对应？ 不一定。
 
 In addition, since we often deal with sequences of variable length which can only be fitted into tensors using *padding*, we must always be mindful of which tokens we are attending to.
 
 In the **three flavours** of multi-head scaled dot-product attention we see in the transformer model, what might be the rules of attention-access?
+
+- 由于处理可变长度序列，只能通过填充装入张量，必须注意我们正在关注哪些 token
 
 #### Encoder Self-Attention
 
