@@ -737,6 +737,8 @@ This might be a good time to take a look at actual examples of attention in diff
 
 As we now know, **different attention heads** can learn to perform **different functions** or process the input sequence in **different contextual subspaces**. 
 
+- 不同的注意力头 可以学习执行不同的功能，或在不同上下文子空间中处理输入序列。
+
 Interpreting *what* a certain head has learned and *why* it may be useful is not straightforward. After all, these models often work at a level of abstraction that is beyond us. But we can certainly *try*. In this section, we shall do so by taking a look at the attention weights produced in a head when provided with an English sequence to translate.
 
 Consider the same English sequence from before –
@@ -769,17 +771,23 @@ The figures below visualize a *few* heads from the first and last encoder and de
 
 In this first example, in an attention head in the first encoder layer, we see a somewhat diagonal attention pattern, which might indicate that query tokens are being interpreted in the light of their immediate neighbourhoods. 
 
+- 第一个 encoder 头是对角线的形式， 表明 query 是根据邻近标记进行解释
+
 <p align="center">                            
 <img src="./img/encoder_self_attention_weights_in_layer_1_head_8.png">
 </p>
 
 In a different head, everything in the sequence appears to be predominantly conditioned by a small number of presumably important tokens like "*beautiful*", "*myster*" (in "*mysterious*"), "*emotion*", "*rad*" (in "*cradle*"), as seen above. 
 
+- 另一个头主要与 emotion 等情感词相关
+
 <p align="center">                            
 <img src="./img/encoder_self_attention_weights_in_layer_6_head_1.png">
 </p>
 
 We see similar behaviour in a head in the last encoder layer, but this time attention is focused on stopword tokens (*stoptokens*?) like "*the*", "*it*", and ".". Remember, by the final layer, tokens are already quite context-rich – it could be that the model has chosen to encode specific information about the sequence into such tokens by this point.
+
+- 第六层的一个头注意力集中在 "the" "it" 等停顿词，最后一层，上下文序列非常丰富，模型可能是将序列特定信息编码到 停顿词 中
 
 <p align="center">                            
 <img src="./img/encoder_self_attention_weights_in_layer_6_head_3.png">
@@ -795,6 +803,9 @@ In the same layer, a different head presents the stark pattern shown above – e
 
 You can clearly see from this example that we have constrained self-attention in the decoder to prior tokens in the sequence.
 
+- 下三角的形式，由于 decoder 是 自回归的
+
+
 The focus on the `<BOS>` token is certainly curious. 
 
 <p align="center">                            
@@ -808,6 +819,9 @@ In the above head, this focus is much more severe, and I can't imagine how this 
 </p>
 
 We see a similar pattern in some heads in the final layer, as seen above, but it can make a lot of sense here because, over the previous layers, the model can encode useful information about the sequence at the the `<BOS>` position. 
+
+- 不清楚 `<bos>` 的内涵是什么，但可能编码了有用信息
+
 
 <p align="center">                            
 <img src="./img/decoder_self_attention_weights_in_layer_6_head_4.png">
@@ -825,11 +839,15 @@ In machine translation, cross-attention heads are of obvious interest, since thi
 
 From the head above, we confirm our earlier suspicion that some non-keyword tokens are being used as carriers of some useful information about the English sequence.
 
+- 验证了之前猜测，一些非关键词用作英语序列有用信息的载体
+
 <p align="center">                            
 <img src="./img/decoder_cross_attention_weights_in_layer_1_head_7.png">
 </p>
 
 In this head, we catch a glimpse of the model's German-to-English dictionary, because German tokens are clearly attending to their English counterparts!
+
+- 这个 head 中可以看到明显的 德英字典 
 
 For visualizations of attention of *all* heads in the first or last encoder or decoder layers, check the [*img* folder](https://github.com/sgrvinod/a-PyTorch-Tutorial-to-Transformers/tree/master/img) in this repository. But remember, it's often hard to understand why a particular head might be doing whatever it's doing. In most cases, we can only speculate, as I have above. And it's even harder in deeper layers because we've no idea what's been encoded into each position that far into the network.
 
@@ -839,9 +857,15 @@ Now, let's continue with our study of the transformer model – there are still 
 
 RNNs *implicitly* account for the positions of tokens in a sequence by virtue of operating on these tokens sequentially. Transformers, however, are designed to be able to process tokens together – the ability to recognize their relative order is not baked into transformer layers.
 
+- RNN 按照顺序对标记进行处理，考虑标记在序列中位置，但 transformer 目的是并行处理标记，不包含识别顺序的能力。
+
 We would therefore need to manually and *explicitly* provide positional information. As you saw earlier, this is done via **positional embeddings** – one-dimensional vectors representing the positions of tokens in the sequence. In other words, similar to how token embeddings each represent a token in the vocabulary, positional embeddings **each represent a position.** For example, the second token in a sequence will *always* be assigned the same positional embedding, regardless of what that token is. 
 
+- positional embeddings : 位置嵌入表示一个位置。 例如，序列中第二个 token 始终分配相同的位置嵌入。 
+
 The positional embedding for each position is **added to the token embedding at that position**, with the resulting embedding representing both the meaning of the token and its place in the sequence. 
+
+- 位置嵌入 添加到 token embedding 中， 那么 token embedding 表示标记含义，也表示其在序列中位置
 
 And like token embeddings, positional embeddings can be learned. You may assume, for instance, that you will never have more than 100 tokens in any given sequence and create a learnable look-up table for the 100 positions. If in an unusual situation you encounter an even longer sequence, you're out of luck – that 101st token and everything that comes after it *cannot* be supplied to the transformer. This isn't necessarily as dire as it sounds because truncating sequences at a length-limit can often be inconsequential depending upon the task at hand, as long as that limit is reasonable for the type of data you're working with.
 
