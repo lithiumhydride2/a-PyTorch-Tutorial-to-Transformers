@@ -869,9 +869,15 @@ The positional embedding for each position is **added to the token embedding at 
 
 And like token embeddings, positional embeddings can be learned. You may assume, for instance, that you will never have more than 100 tokens in any given sequence and create a learnable look-up table for the 100 positions. If in an unusual situation you encounter an even longer sequence, you're out of luck – that 101st token and everything that comes after it *cannot* be supplied to the transformer. This isn't necessarily as dire as it sounds because truncating sequences at a length-limit can often be inconsequential depending upon the task at hand, as long as that limit is reasonable for the type of data you're working with.
 
+- 只要长度限制对处理数据合理，那么在长度限制处截断无关紧要
+
 Translation, however, is a task that's especially allergic to chopping the ends off sentences. In this particular paper, therefore, the authors choose a different route – **positional embeddings that can be precomputed mathematically up to any arbitrary sequence length**, with a recognizable pattern in them such that the transformer model would even be able to extrapolate to positions not seen during training. 
 
+- 文章里 位置嵌入通过数学方法预先计算任意长度的序列。
+
 As humans, this is something we do as well. Nobody ever taught us to count up to, say, 10000000000 – and yet, *we can*. Given enough time, we can list the exact sequence of numbers that lead up to it. Because we *know* the pattern for how numbers change as they increase in numerical value. Natural or base-10 numbers have multiple dimensions that go from 0-9 in cycles, with each new "dimension" (digit to the left) taking ten times as long to complete a cycle. Binary numbers follow a similar pattern, but go from 0-1 and periods of cycles double from one dimension to another. 
+
+- 作为人类，我们不能一口气数到 100000, 但我们掌握进位的关系。
 
 <p align="center">                            
 <img src="./img/positional_embeddings_1.PNG">
@@ -881,6 +887,8 @@ In fact, this is a common pattern (with some allowances) for how we count things
 
 Embeddings in a neural network, like all parameters or outputs, are floating-point numbers. Additionally, it is better for these numbers to be normalized to a fixed scale and centered in some way. How then would we define our positional embeddings such that the various dimensions encode cycles whose frequencies vary geometrically?
 
+- 网络中的 embedding 和输出一样，都是浮点数。数字最好归一化为固定比例，如何定义 positional embeddings , 使维度的周期频率按几何规律变化。
+
 The authors use **sinusoids**. 
 
 <p align="center">                            
@@ -889,11 +897,16 @@ The authors use **sinusoids**.
 
 If you consider the standard sinusioidal forms $\sin\omega i$ and $\cos\omega i$, for positions $i$, you can see that the angular frequency $\omega$ decreases geometrically from $1$ to about $\frac{1}{10000}$ radians per position as you move from left to right in the embedding. This means that the frequency ($f=\frac{\omega}{2\pi}$) decreases from $\frac{1}{2\pi}$ to about $\frac{1}{10000\cdot2\pi}$ cycles per position, and the wavelength ($\lambda=\frac{1}{f}$) increases from $2\pi$ to about $10000\cdot2\pi$ positions per cycle. 
 
+- 每轮中，波长从 2*\pi 增长到大约 10000 * 2 *\pi 
+- 这个图中有 10000 列 ， 从左到右 角频率 \omega 减小
+
 <p align="center">                            
 <img src="./img/positional_embeddings.png">
 </p>
 
 Importantly, **sinusoids' values at *any* position can be expressed as a linear function of their values $\phi$ positions away**, allowing the transformer to use information about the relative positions of tokens in the attention mechanism.
+
+- 正弦波任意位置的值可用 \varphi 的线性函数表示，这样 transformer 使用 token 的相对位置信息， 如何理解 线性表示 ？
 
 This means that for sinusoids of a given frequency $\omega$, their values at a position $i + \phi$ in the sequence, $\sin\omega (i+\phi)$ and $\cos\omega (i+\phi)$, can be expressed as a linear function of their values at the position $i$, $\sin\omega i$ and $\cos\omega i$. 
 
