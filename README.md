@@ -918,11 +918,20 @@ As a matter of fact, positional embeddings in recent years have made the transit
 
 We talked earlier about how we will discretize a sequence not *only* into words or characters, but a mixture of words, characters, *and* anything in between. This is known as ***subword* tokenization**.
 
+- subword tokenization : 离散化任何 单词 、 字符
+
 A vocabulary with only single characters can encode any text with a very small vocabulary size. But sequences in their tokenized form can get impossibly long. And most characters, as learned and represented by their embeddings, are not as individually meaningful. 
+
+- 单个字符可以编码任意长度，但单字符的嵌入 is not individually meaningful。
 
 A vocabulary with only words, each with inherent and specific meaning, would have to be *much* larger in order to encode an appreciable portion of any text corpus. Any rare, or new, or unseen word – even something as simple as the plural form of a known word – cannot be handled. And machine translation, like many other tasks, is a profoundly *open*-vocabulary problem. A limited vocabulary will result in a limited model, especially with languages that are [agglutinative](https://en.wikipedia.org/wiki/Agglutination) or [compounding](https://en.wikipedia.org/wiki/Compound_(linguistics)). 
 
+- inherent 固有的
+- corpus 语料库 复数形式 : corpora
+
 **Byte Pair Encoding (BPE)** and other forms of subword tokenization offer a nice trade-off. They can **encode just about anything** with a moderately sized vocabulary and **tokens are still inherently meaningful**. Common words will usually be tokenized as words, and uncommon or unseen words can be tokenized as a sequence of linguistic building blocks such as [morphemes](https://en.wikipedia.org/wiki/Morpheme) or [root words](https://en.wikipedia.org/wiki/Root_(linguistics)) or, if needed, even single characters. This vocabulary is learned from the data.
+
+- 没见过的词可以被 语素 和 root words 构建， 这个 vocabulary 也是从 data 中学习的。
 
 Interestingly, BPE was originally designed as a data compression algorithm, where common byte sequences could be replaced with single bytes (whose expanded forms are stored in a dictionary), thus reducing the size of the data. But it is now commonly used for subword tokenization in NLP applications. 
 
