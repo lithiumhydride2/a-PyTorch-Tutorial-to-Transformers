@@ -1067,11 +1067,14 @@ You could also think of this as adding a regularization or noise term to a stand
 
 Since for generation tasks, the vocabulary size $v$ is quite large, each token receives only a miniscule portion of $\varepsilon$ in its redistribution.
 
+- label-smooth 可以理解为在分类为在的标准交叉熵上，添加正则项或噪声项，这由单词的数量决定
 ### Beam Search
 
 During inference with a trained transformer model, the straightforward – and greedy – option would be to choose the token with the highest score and use it to predict the next token. But this isn't optimal because the rest of the sequence hinges on that first token we choose. If that choice isn't the best, everything that follows is sub-optimal. And it's not just the first token – each token in the generated sequence has consequences for the ones that succeed it.
 
 It might very well happen that if you'd chosen the _third_ best token at that first decoding step, and the _second_ best token at the second step, and so on... _that_ would be the best sequence you could generate.
+
+- 一直根据最 optimal 的策略进行选择，并不总能得到最佳的结果 
 
 It would be great if we could somehow _not_ decide until we've finished decoding completely, and then **choose the sequence that has the highest _overall_ score from a basket of candidate sequences**.
 
@@ -1140,6 +1143,8 @@ Because four sequences reach completion together in the last step, we end up wit
 I do not speak German myself, so I cannot say with any certainty how different these completed sequences are, but it seems that the chosen sequence (in blue) is closer to the original than the sequence that would have been generated *without* beam search (in red).
 
 And with this, it appears that our task of trying to understand the working of the transformer has *also* reached completion. 
+
+- Done 看完了理论部分
 
 # Implementation
 
